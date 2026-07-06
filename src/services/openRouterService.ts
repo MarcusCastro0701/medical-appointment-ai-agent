@@ -1,5 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { config, type ModelConfig } from "../config.ts";
+import { config, type ModelConfig } from "../config/index.ts";
 import { z } from 'zod/v3'
 import { createAgent, HumanMessage, toolStrategy, SystemMessage } from "langchain";
 

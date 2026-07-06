@@ -1,14 +1,19 @@
-import { describe, it } from 'node:test';
+import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { createServer } from '../src/server.ts';
 import { professionals } from '../src/services/appointmentService.ts';
 
 const app = createServer();
+let authToken: string;
 
 async function makeARequest(question: string) {
     return await app.inject({
         method: 'POST',
         url: '/chat',
+        headers: {
+            authorization: `Bearer ${authToken}`,
+        },
         payload: {
             question,
         },
@@ -16,6 +21,22 @@ async function makeARequest(question: string) {
 }
 
 describe('Medical Appointment System - E2E Tests', async () => {
+
+    before(async () => {
+        const email = `test-${randomUUID()}@example.com`;
+        const signupResponse = await app.inject({
+            method: 'POST',
+            url: '/auth/signup',
+            payload: {
+                name: 'Test User',
+                email,
+                password: 'test1234',
+            },
+        });
+
+        const { token } = JSON.parse(signupResponse.body);
+        authToken = token;
+    });
 
     it('Schedule appointment - Success', async () => {
         const response = await makeARequest(

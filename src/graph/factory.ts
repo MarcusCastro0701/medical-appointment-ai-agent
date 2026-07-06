@@ -1,4 +1,4 @@
-import { config } from '../config.ts';
+import { config } from '../config/index.ts';
 import { AppointmentService } from '../services/appointmentService.ts';
 import { OpenRouterService } from '../services/openRouterService.ts';
 import { buildAppointmentGraph } from './graph.ts';
