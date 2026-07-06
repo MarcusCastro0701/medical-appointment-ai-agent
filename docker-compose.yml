@@ -17,5 +17,19 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build: .
+    container_name: medical-appointment-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/medical_appointment
+    ports:
+      - '3000:3000'
+
 volumes:
   postgres_data:

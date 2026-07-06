@@ -48,6 +48,13 @@ export class OpenRouterService {
                 new HumanMessage(userPrompt)
             ]
             const data = await agent.invoke({ messages })
+            if (!data.structuredResponse) {
+                return {
+                    success: false,
+                    error: 'Model did not return structured output',
+                }
+            }
+
             return {
                 success: true,
                 data: data.structuredResponse,

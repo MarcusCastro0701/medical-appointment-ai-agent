@@ -49,7 +49,13 @@ export const createServer = () => {
             messages: [new HumanMessage(question)],
         });
 
-        return response
+        const lastMessage = response.messages.at(-1);
+
+        return {
+            reply: lastMessage?.content ?? '',
+            intent: response.intent ?? 'unknown',
+            success: response.actionSuccess ?? true,
+        };
     });
 
     return app;
