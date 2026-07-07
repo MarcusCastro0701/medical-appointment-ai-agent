@@ -62,7 +62,7 @@ export const createServer = () => {
                 type: 'object',
                 required: ['question'],
                 properties: {
-                    question: { type: 'string', minLength: 10, maxLength: 500 },
+                    question: { type: 'string', minLength: 1, maxLength: 500 },
                     chatId: { type: 'string' },
                 },
             }
@@ -86,7 +86,7 @@ export const createServer = () => {
         }
 
         const response = await graph.invoke(
-            { messages: [new HumanMessage(question)] },
+            { messages: [new HumanMessage(question)], userId: request.user!.id, userName: request.user!.name, userEmail: request.user!.email },
             { configurable: { thread_id: chat.id } },
         );
 

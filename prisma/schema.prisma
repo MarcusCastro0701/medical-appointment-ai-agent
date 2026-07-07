@@ -17,6 +17,31 @@ model User {
 
   sessions     Session[]
   chats        Chat[]
+  appointments Appointment[]
+}
+
+model Professional {
+  id       Int    @id @default(autoincrement())
+  name     String
+  specialty String
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id             String   @id @default(uuid())
+  professionalId Int
+  userId         Int
+  patientName    String
+  reason         String?
+  datetime       DateTime
+  createdAt      DateTime @default(now())
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, datetime])
+  @@index([userId])
 }
 
 model Chat {

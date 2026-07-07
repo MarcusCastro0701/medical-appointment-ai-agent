@@ -21,13 +21,22 @@ export function createMessageGeneratorNode(llmClient: OpenRouterService) {
         }
 
         try {
-            const hasSucceeded = state.actionSuccess ? 'success' : 'error'
-            const scenario = `${state.intent ?? 'unknown'}_${hasSucceeded}`
+            // schedulerNode/cancellerNode always clear awaitingConfirmation except when returning a fresh proposal.
+            const isProposal = !!state.awaitingConfirmation;
+            const scenario = isProposal
+                ? `${state.awaitingConfirmation}_confirm_needed`
+                : `${state.intent ?? 'unknown'}_${state.actionSuccess ? 'success' : 'error'}`
+            const needsAppointmentsContext = state.intent === 'list_appointments' || state.intent === 'cancel' || state.awaitingConfirmation === 'cancel';
             const details = {
                 professionalName: state.professionalName,
                 datetime: state.datetime,
                 patientName: state.patientName,
+                reason: state.reason,
                 error: state.actionError,
+                appointments: needsAppointmentsContext ? state.appointmentsList : undefined,
+                userName: state.userName,
+                userEmail: state.userEmail,
+                availableProfessionals: state.professionalsList,
             }
 
             const history = state.messages.map((m) => ({ role: m.getType(), content: m.content }));

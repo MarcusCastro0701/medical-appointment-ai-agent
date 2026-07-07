@@ -15,7 +15,11 @@
     "test:e2e": "node --inspect --env-file .env --test tests/**/*e2e.test.ts",
     "langgraph:serve": "npx @langchain/langgraph-cli dev",
     "migration:generate": "prisma migrate dev",
-    "migration:run": "prisma migrate deploy"
+    "migration:run": "prisma migrate deploy",
+    "seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "node --env-file .env prisma/seed.ts"
   },
   "keywords": [
     "langchain",

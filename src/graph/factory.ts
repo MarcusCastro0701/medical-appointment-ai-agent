@@ -5,14 +5,18 @@ import { OpenRouterService } from '../services/openRouterService.ts';
 import { buildAppointmentGraph } from './graph.ts';
 
 export async function buildGraph() {
-  const llmClient = new OpenRouterService(config)
+  // Classification/extraction must be consistent and rule-following, not creative — low temperature.
+  const classifierLlm = new OpenRouterService({ ...config, temperature: 0.1 })
+  // Narration benefits from natural, varied phrasing — keep the higher default temperature.
+  const narratorLlm = new OpenRouterService(config)
   const appointmentService = new AppointmentService()
 
   const checkpointer = PostgresSaver.fromConnString(process.env.DATABASE_URL!);
   await checkpointer.setup();
 
   return buildAppointmentGraph(
-    llmClient,
+    classifierLlm,
+    narratorLlm,
     appointmentService,
     checkpointer,
   );

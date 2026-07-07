@@ -10,6 +10,7 @@ import type { BaseMessage } from '@langchain/core/messages';
 
 import { createSchedulerNode } from './nodes/schedulerNode.ts';
 import { createCancellerNode } from './nodes/cancellerNode.ts';
+import { createListAppointmentsNode } from './nodes/listAppointmentsNode.ts';
 import { createIdentifyIntentNode} from "./nodes/identifyIntentNode.ts";
 import { createMessageGeneratorNode } from "./nodes/messageGeneratorNode.ts";
 
@@ -17,18 +18,42 @@ import { z } from "zod/v3";
 import { OpenRouterService } from "../services/openRouterService.ts";
 import { AppointmentService } from "../services/appointmentService.ts";
 
+const AppointmentContextSchema = z.object({
+  id: z.string(),
+  professionalName: z.string(),
+  specialty: z.string(),
+  datetime: z.string(),
+  patientName: z.string(),
+});
+
+const ProfessionalContextSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  specialty: z.string(),
+});
+
 const AppointmentStateAnnotation = z.object({
   messages: withLangGraph(
     z.custom<BaseMessage[]>(),
+    
     MessagesZodMeta),
 
   patientName: z.string().optional(),
+  userId: z.number().optional(),
+  userName: z.string().optional(),
+  userEmail: z.string().optional(),
 
-  intent: z.enum(['schedule', 'cancel', 'unknown']).optional(),
+  intent: z.enum(['schedule', 'cancel', 'list_appointments', 'unknown']).optional(),
   professionalId: z.number().optional(),
   professionalName: z.string().optional(),
   datetime: z.string().optional(),
   reason: z.string().optional(),
+  appointmentId: z.string().optional(),
+  appointmentsList: z.array(AppointmentContextSchema).optional(),
+  professionalsList: z.array(ProfessionalContextSchema).optional(),
+
+  awaitingConfirmation: z.enum(['schedule', 'cancel']).optional(),
+  confirmed: z.boolean().optional(),
 
   actionSuccess: z.boolean().optional(),
   actionError: z.string().optional(),
@@ -40,17 +65,18 @@ const AppointmentStateAnnotation = z.object({
 
 export type GraphState = z.infer<typeof AppointmentStateAnnotation>;
 
-export function buildAppointmentGraph(llmClient: OpenRouterService, appoinmentService: AppointmentService, checkpointer?: BaseCheckpointSaver) {
+export function buildAppointmentGraph(classifierLlm: OpenRouterService, narratorLlm: OpenRouterService, appoinmentService: AppointmentService, checkpointer?: BaseCheckpointSaver) {
 
 
   // Build workflow graph
   const workflow = new StateGraph({
     stateSchema: AppointmentStateAnnotation,
   })
-    .addNode('identifyIntent', createIdentifyIntentNode(llmClient))
+    .addNode('identifyIntent', createIdentifyIntentNode(classifierLlm, appoinmentService))
     .addNode('schedule', createSchedulerNode(appoinmentService))
     .addNode('cancel', createCancellerNode(appoinmentService))
-    .addNode('message', createMessageGeneratorNode(llmClient))
+    .addNode('listAppointments', createListAppointmentsNode())
+    .addNode('message', createMessageGeneratorNode(narratorLlm))
 
     // Flow
     .addEdge(START, 'identifyIntent')
@@ -59,7 +85,16 @@ export function buildAppointmentGraph(llmClient: OpenRouterService, appoinmentSe
     .addConditionalEdges(
       'identifyIntent',
       (state: GraphState): string => {
-        if (state.error || !state.intent || state.intent === 'unknown') {
+        if (state.error) {
+          return 'message';
+        }
+
+        if (state.awaitingConfirmation && state.confirmed) {
+          console.log(`➡️  Confirmed — executing pending ${state.awaitingConfirmation}`);
+          return state.awaitingConfirmation;
+        }
+
+        if (!state.intent || state.intent === 'unknown') {
           return 'message';
         }
 
@@ -69,12 +104,14 @@ export function buildAppointmentGraph(llmClient: OpenRouterService, appoinmentSe
       {
         schedule: 'schedule',
         cancel: 'cancel',
+        list_appointments: 'listAppointments',
         message: 'message',
       }
     )
 
     .addEdge('schedule', 'message')
     .addEdge('cancel', 'message')
+    .addEdge('listAppointments', 'message')
     .addEdge('message', END);
 
   return workflow.compile({ checkpointer });
