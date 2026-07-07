@@ -31,12 +31,15 @@ export const getUserPromptTemplate = (data: any) => {
   return JSON.stringify({
     scenario: data.scenario,
     details: data.details,
+    conversation: data.history,
     instructions: [
       'Generate an appropriate message for the given scenario',
       'Include all relevant details from the details object',
+      'The conversation array has the full chat history so far, oldest first, for context',
+      'If the scenario is "unknown", check the conversation history first — if the current message is a follow-up question about something already discussed (e.g. an appointment just scheduled or cancelled), answer it using that context instead of the generic redirect',
       'Be clear and direct',
       'Show empathy, especially for errors',
-      'For unknown intents, guide users back to scheduling/cancelling',
+      'For unknown intents with no relevant history, guide users back to scheduling/cancelling',
       'Answer in the same language as the question (preferably Portuguese)'
     ],
     examples: {

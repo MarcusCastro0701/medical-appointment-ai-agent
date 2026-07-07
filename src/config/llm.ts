@@ -24,8 +24,7 @@ export const config: ModelConfig = {
   httpReferer: '',
   xTitle: 'Medical Appointment Agent',
   models: [
-    // https://openrouter.ai/models?fmt=cards&max_price=0&supported_parameters=response_format
-    'nvidia/nemotron-3-super-120b-a12b:free',
+    'openai/gpt-4o-mini',
   ],
   provider: {
     sort: {

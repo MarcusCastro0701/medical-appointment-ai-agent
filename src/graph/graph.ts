@@ -4,6 +4,7 @@ import {
   END,
   MessagesZodMeta,
 } from "@langchain/langgraph";
+import type { BaseCheckpointSaver } from "@langchain/langgraph-checkpoint";
 import { withLangGraph } from "@langchain/langgraph/zod";
 import type { BaseMessage } from '@langchain/core/messages';
 
@@ -34,11 +35,12 @@ const AppointmentStateAnnotation = z.object({
   appointmentData: z.any().optional(),
 
   error: z.string().optional(),
+  systemError: z.boolean().optional(),
 });
 
 export type GraphState = z.infer<typeof AppointmentStateAnnotation>;
 
-export function buildAppointmentGraph(llmClient: OpenRouterService, appoinmentService: AppointmentService) {
+export function buildAppointmentGraph(llmClient: OpenRouterService, appoinmentService: AppointmentService, checkpointer?: BaseCheckpointSaver) {
 
 
   // Build workflow graph
@@ -75,5 +77,5 @@ export function buildAppointmentGraph(llmClient: OpenRouterService, appoinmentSe
     .addEdge('cancel', 'message')
     .addEdge('message', END);
 
-  return workflow.compile();
+  return workflow.compile({ checkpointer });
 }

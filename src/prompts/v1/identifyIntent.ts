@@ -58,15 +58,18 @@ export const getSystemPrompt = (professionals: any[]) => {
   });
 };
 
-export const getUserPromptTemplate = (question: string) => {
+export const getUserPromptTemplate = (history: { role: string; content: unknown }[]) => {
   return JSON.stringify({
-    question,
+    conversation: history,
     instructions: [
-      'Carefully analyze the question to determine the user intent',
-      'Extract all relevant appointment details',
+      'The conversation array contains the full chat history so far, oldest first',
+      'The last entry is the user\'s current message — that is what you must classify',
+      'Use the earlier messages only as context, e.g. to resolve references like "my appointment" or answer follow-ups about something already discussed',
+      'Carefully analyze the current message to determine the user intent',
+      'Extract all relevant appointment details, using earlier context if the current message alone is incomplete',
       'Convert dates and times to ISO format',
       'Match professional names to their IDs',
-      'Return only the fields that are present in the question'
+      'Return only the fields that are present or reasonably inferable from the conversation'
     ]
   });
 };

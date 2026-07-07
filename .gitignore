@@ -9,6 +9,8 @@ outputs/
 # LangGraph API
 .langgraph_api
 
-# Claude Code tooling (not part of the app)
+# Claude Code / AI tooling (not part of the app)
 .agents/
 .claude/
+CLAUDE.md
+skills-lock.json

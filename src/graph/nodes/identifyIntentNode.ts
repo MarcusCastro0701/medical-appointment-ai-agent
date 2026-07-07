@@ -6,11 +6,11 @@ import type { GraphState } from '../graph.ts';
 export function createIdentifyIntentNode(llmClient: OpenRouterService) {
   return async (state: GraphState): Promise<Partial<GraphState>> => {
     console.log(`🔍 Identifying intent...`);
-   const input = state.messages.at(-1)!.text;
+    const history = state.messages.map((m) => ({ role: m.getType(), content: m.content }));
 
     try {
       const systemPrompt = getSystemPrompt(professionals)
-      const userPrompt = getUserPromptTemplate(input)
+      const userPrompt = getUserPromptTemplate(history)
       const result = await llmClient.generateStructured(
         systemPrompt,
         userPrompt,
@@ -20,7 +20,8 @@ export function createIdentifyIntentNode(llmClient: OpenRouterService) {
         console.log(`⚠️  Intent identification failed: ${result.error}`);
         return {
           intent: 'unknown',
-          error: result.error
+          error: result.error,
+          systemError: true,
         }
       }
 
@@ -29,6 +30,8 @@ export function createIdentifyIntentNode(llmClient: OpenRouterService) {
 
       return {
         ...intentData,
+        error: undefined,
+        systemError: false,
       };
 
     } catch (error) {
@@ -37,6 +40,7 @@ export function createIdentifyIntentNode(llmClient: OpenRouterService) {
         ...state,
         intent: 'unknown',
         error: error instanceof Error ? error.message : 'Intent identification failed',
+        systemError: true,
       };
     }
   };

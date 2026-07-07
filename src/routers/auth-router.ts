@@ -5,7 +5,9 @@ import { authenticate } from '../middlewares/authentication-middleware.ts';
 import { errors } from '../utils/httpErrors.ts';
 
 export async function authRouter(app: FastifyInstance) {
-  app.post('/auth/signup', async (request, reply) => {
+  app.post('/auth/signup', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const parsed = signupSchema.safeParse(request.body);
     if (!parsed.success) {
       throw errors.badRequest('Validation error', parsed.error.flatten());
@@ -16,7 +18,9 @@ export async function authRouter(app: FastifyInstance) {
     return result;
   });
 
-  app.post('/auth/signin', async (request, reply) => {
+  app.post('/auth/signin', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const parsed = signinSchema.safeParse(request.body);
     if (!parsed.success) {
       throw errors.badRequest('Validation error', parsed.error.flatten());

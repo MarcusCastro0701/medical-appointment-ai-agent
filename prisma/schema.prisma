@@ -16,6 +16,18 @@ model User {
   updatedAt    DateTime @updatedAt
 
   sessions     Session[]
+  chats        Chat[]
+}
+
+model Chat {
+  id           String   @id @default(uuid())
+  userId       Int
+  messageCount Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Session {
