@@ -3,9 +3,7 @@ import type { AppointmentService } from '../../services/appointmentService.ts';
 import { OpenRouterService } from '../../services/openRouterService.ts';
 import type { GraphState } from '../graph.ts';
 
-// Fast, deterministic path for the overwhelming majority of confirmation replies — "sim"/"não" and close
-// variants should never depend on an LLM call to be recognized correctly. Anything that doesn't match falls
-// through to the LLM's semantic judgment (handles informal/slangy phrasing like "siiiim" or "nem a pau").
+// deterministic yes/no check; unmatched messages fall back to the LLM's semantic judgment
 const CONFIRM_YES_PATTERN = /^(sim|s|yes|y|ok(ay)?|confirmo|confirmar|isso mesmo|isso a[íi]|isso|pode confirmar|beleza|claro|com certeza|manda ver|pode ser)\b/i;
 const CONFIRM_NO_PATTERN = /^(n[ãa]o|n|no|nunca|negativo|deixa (pra|para) l[áa]|esquece|cancela isso)\b/i;
 
@@ -78,9 +76,7 @@ export function createIdentifyIntentNode(llmClient: OpenRouterService, appointme
       return {
         ...intentData,
         confirmed,
-        // A pending confirmation only survives into a turn that confirms it — schedulerNode/cancellerNode
-        // clear it themselves after executing. Any other outcome (decline, unrelated message) drops it here,
-        // so a stale "yes" can never fire against a proposal from an unrelated later turn.
+        // drop a pending confirmation unless this turn confirms it
         ...(isConfirmationTurn && !confirmed ? { awaitingConfirmation: undefined } : {}),
         appointmentsList,
         professionalsList: professionals,

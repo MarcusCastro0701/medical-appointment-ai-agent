@@ -28,7 +28,7 @@ export const config: ModelConfig = {
   ],
   provider: {
     sort: {
-      by: 'throughput', // Route to model with highest throughput (fastest response)
+      by: 'throughput',
       partition: 'none',
     },
   },

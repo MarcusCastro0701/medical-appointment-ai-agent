@@ -21,7 +21,6 @@ export function createMessageGeneratorNode(llmClient: OpenRouterService) {
         }
 
         try {
-            // schedulerNode/cancellerNode always clear awaitingConfirmation except when returning a fresh proposal.
             const isProposal = !!state.awaitingConfirmation;
             const scenario = isProposal
                 ? `${state.awaitingConfirmation}_confirm_needed`

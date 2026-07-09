@@ -10,7 +10,6 @@ const CancelRequiredFieldsSchema = z.object({
 export function createCancellerNode(appointmentService: AppointmentService) {
   return async (state: GraphState): Promise<Partial<GraphState>> => {
 
-    // Already proposed and just confirmed this turn — execute using the appointmentId stored since the proposal.
     if (state.awaitingConfirmation === 'cancel' && state.confirmed) {
       console.log(`❌ Confirmed — cancelling appointment...`);
       try {
@@ -39,7 +38,6 @@ export function createCancellerNode(appointmentService: AppointmentService) {
       }
     }
 
-    // First pass: validate, resolve the matched appointment's details for narration, and propose.
     console.log(`❌ Preparing cancellation proposal...`);
     const validation = CancelRequiredFieldsSchema.safeParse(state)
     if (!validation.success) {

@@ -12,7 +12,7 @@ const ScheduleRequiredFieldsSchema = z.object({
 export function createSchedulerNode(appointmentService: AppointmentService) {
   return async (state: GraphState): Promise<Partial<GraphState>> => {
 
-    // Already proposed and just confirmed this turn — execute using the fields stored since the proposal.
+    // confirmed: execute using the fields already stored in state
     if (state.awaitingConfirmation === 'schedule' && state.confirmed) {
       console.log(`📅 Confirmed — scheduling appointment...`);
       try {
@@ -46,7 +46,6 @@ export function createSchedulerNode(appointmentService: AppointmentService) {
       }
     }
 
-    // First pass: validate required fields and, if complete, propose instead of executing.
     console.log(`📅 Preparing appointment proposal...`);
     const validation = ScheduleRequiredFieldsSchema.safeParse(state)
 

@@ -68,7 +68,6 @@ export type GraphState = z.infer<typeof AppointmentStateAnnotation>;
 export function buildAppointmentGraph(classifierLlm: OpenRouterService, narratorLlm: OpenRouterService, appoinmentService: AppointmentService, checkpointer?: BaseCheckpointSaver) {
 
 
-  // Build workflow graph
   const workflow = new StateGraph({
     stateSchema: AppointmentStateAnnotation,
   })
@@ -78,10 +77,8 @@ export function buildAppointmentGraph(classifierLlm: OpenRouterService, narrator
     .addNode('listAppointments', createListAppointmentsNode())
     .addNode('message', createMessageGeneratorNode(narratorLlm))
 
-    // Flow
     .addEdge(START, 'identifyIntent')
 
-    // Route based on intent
     .addConditionalEdges(
       'identifyIntent',
       (state: GraphState): string => {

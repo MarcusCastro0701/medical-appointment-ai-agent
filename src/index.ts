@@ -19,9 +19,3 @@ async function shutdown(signal: string) {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
-
-//  curl \
-//  -X POST \
-//  -H 'Content-type: application/json' \
-//  --data '{"question": "upper"}' \
-//  localhost:3000/chat
