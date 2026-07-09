@@ -21,3 +21,8 @@ export async function buildGraph() {
     checkpointer,
   );
 }
+
+// Entry point expected by langgraph.json (`./src/graph/factory.ts:graph`) for `langgraph:serve`/Studio.
+export const graph = async () => {
+  return buildGraph();
+};

@@ -9,8 +9,10 @@ import { authenticate } from './middlewares/authentication-middleware.ts';
 import { AppError, errors } from './utils/httpErrors.ts';
 import chatRepository from './repositories/chat-repository.ts';
 import { maxChatMessages } from './config/index.ts';
+import { AppointmentService } from './services/appointmentService.ts';
 
 const graph = await buildGraph();
+const appointmentService = new AppointmentService();
 
 export const createServer = () => {
     const app = Fastify();
@@ -100,6 +102,23 @@ export const createServer = () => {
             intent: response.intent ?? 'unknown',
             success: response.actionSuccess ?? true,
         };
+    });
+
+    app.get('/appointments', { preHandler: [authenticate] }, async (request) => {
+        const appointments = await appointmentService.getAppointmentsForUser(request.user!.id);
+
+        return appointments.map((appointment) => ({
+            id: appointment.id,
+            professional: {
+                id: appointment.professional.id,
+                name: appointment.professional.name,
+                specialty: appointment.professional.specialty,
+            },
+            patientName: appointment.patientName,
+            reason: appointment.reason,
+            datetime: appointment.datetime,
+            createdAt: appointment.createdAt,
+        }));
     });
 
     app.get('/chats', { preHandler: [authenticate] }, async (request) => {

@@ -1,24 +1,19 @@
 # Medical Appointment Agent
 
-AI agent for scheduling and cancelling medical appointments through natural language, built with **LangGraph**, **LangChain**, **OpenRouter**, **Fastify** and **PostgreSQL**.
-
-Users authenticate, then chat naturally (`POST /chat`) to book or cancel appointments. The agent identifies intent, extracts structured data, executes the action, and replies conversationally — with each conversation's full history persisted in Postgres.
+AI agent for scheduling, cancelling and listing medical appointments through natural language, built with **LangGraph**, **LangChain**, **OpenRouter**, **Fastify** and **PostgreSQL**.
 
 ## How it works
 
-The agent runs as a state graph: it identifies the user's intent from a chat message, extracts the relevant details (professional, date/time, patient name), performs the requested action, and replies in natural language.
+A LangGraph state graph classifies the user's intent and extracts structured data; scheduling and cancelling always propose the action first and only execute after the user explicitly confirms in a following message.
 
 ```
-START → identifyIntent ─┬─ schedule ─┐
-                         ├─ cancel  ──┼─→ message → END
-                         └─ (unknown)─┘
+START → identifyIntent ─┬─ schedule ────────┐
+                         ├─ cancel  ─────────┤
+                         ├─ listAppointments ┤
+                         └─ (unknown) ───────┴─→ message → END
 ```
 
-- **identifyIntent**: classifies the request (`schedule` / `cancel` / `unknown`) and extracts structured data via LLM, validated with Zod.
-- **schedule / cancel**: validate required fields and perform the action against the appointment service.
-- **message**: generates a friendly, natural-language reply based on the outcome.
-
-Each conversation is persisted via a LangGraph Postgres checkpointer, so both the intent-classification and reply-generation steps have access to the full conversation history — enabling natural follow-ups (e.g. "was my appointment actually confirmed?").
+Conversation history (LangGraph Postgres checkpointer) and appointment/professional data (Prisma) are both persisted, so context and bookings survive a restart.
 
 ## Stack
 
@@ -76,6 +71,7 @@ Requires a Postgres instance reachable at your `DATABASE_URL`.
 
 ```bash
 npm install
+npx prisma generate
 npx prisma migrate deploy
 npx prisma db seed        # requires APP_LANGUAGE to be set in .env
 npm start
@@ -84,21 +80,13 @@ npm start
 ## Verifying it works
 
 ```bash
-# 1. Create an account (signup logs you in automatically)
 curl -X POST http://localhost:3000/auth/signup \
   -H 'Content-Type: application/json' \
   --data '{"name": "Maria Santos", "email": "maria@example.com", "password": "senha123"}'
 # → { "token": "..." }
-
-# 2. Chat with the agent (use the token from step 1)
-curl -X POST http://localhost:3000/chat \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer <token>' \
-  --data '{"question": "Quero agendar uma consulta com Dr. Alicio da Silva amanhã às 16h, meu nome é Maria Santos"}'
-# → { "chatId": "...", "reply": "...", "intent": "schedule", "success": true }
 ```
 
-Reuse the returned `chatId` in the body of your next request to continue the same conversation with full memory.
+Use the token to call `POST /chat` (professional names must match one of the 3 seeded professionals). Scheduling/cancelling will ask for confirmation first — reply with the same `chatId` to confirm and actually execute it.
 
 ## Tests
 
@@ -117,19 +105,22 @@ All protected routes require `Authorization: Bearer <token>`.
 | `POST /auth/signup` | – | Create an account, returns a token |
 | `POST /auth/signin` | – | Log in, returns a token |
 | `POST /auth/logout` | yes | Revoke the current token |
-| `POST /chat` | yes | Send a message; omit `chatId` to start a new conversation, pass it to continue an existing one |
+| `POST /chat` | yes | Send a message; omit `chatId` to start a new conversation, pass it to continue an existing one. Scheduling/cancelling proposes first (`success: false`) and only executes (`success: true`) after confirmation on a following message |
 | `GET /chats` | yes | List the authenticated user's conversations |
 | `GET /chats/:id` | yes | Full message history of a conversation |
 
 Errors follow a consistent shape: `{ "error": "CODE", "message": "...", "details": {} }`. LLM failures (timeout, malformed output, quota, etc.) never surface as a `500` — they come back as a normal `200` response with `intent: "unknown"` and an apology message, ready to display as-is.
 
-## Known limitations
+## Scope
 
-This is a portfolio project, so some scope is deliberately limited:
+Built to demonstrate the agent pattern of the LangGraph orchestration, structured extraction, confirmation-gated actions, persisted context, rather than to model a full-blown scheduling system. Auth is Bearer-token only (no refresh flow) and availability is a straightforward same-slot check, not per-professional working hours.
 
-- No refresh tokens — once the 7-day token expires, the user has to log in again.
-- Appointment conflict checking is simple: same professional + exact same timestamp = unavailable. There's no modeling of per-professional working hours/availability windows.
-- No "list my appointments" intent yet — the agent only handles scheduling and cancelling via chat.
+**Model choice:** the agent leans on reliable structured-output/function-calling, so which LLM you point `OPENROUTER_API_KEY` at matters. Recommended, all via OpenRouter:
+- `openai/gpt-4o-mini` (current default)
+- `anthropic/claude-3.5-haiku`
+- `google/gemini-2.0-flash-001`
+
+These are low-cost paid models, by design, testing against the free-tier models available today sthat showed real inconsistencies (unreliable structured output, weaker adherence to instructions like confirmation detection) that noticeably hurt the user experience, so the project intentionally moved off them.
 
 ## License
 
