@@ -8,7 +8,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: medical_appointment
     ports:
-      - '5432:5432'
+      # Host 5433 -> container 5432: 5432 do host já está ocupado por um
+      # PostgreSQL nativo do Windows (fora do Docker); a rede interna do
+      # compose continua usando a porta 5432 normalmente (app -> postgres:5432).
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

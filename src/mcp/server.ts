@@ -1,11 +1,16 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { AppointmentService } from '../services/appointmentService.ts';
+import { registerListAppointmentsTool } from './tools/listAppointments.ts';
 
+const appointmentService = new AppointmentService();
 
 const server = new McpServer({
     name: 'medical-appointment-mcp',
     version: '1.0.0',
 });
+
+registerListAppointmentsTool(server, appointmentService);
 
 async function main() {
     const transport = new StdioServerTransport();
