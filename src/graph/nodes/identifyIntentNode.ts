@@ -2,17 +2,7 @@ import { getSystemPrompt, getUserPromptTemplate, IntentSchema, type PendingConfi
 import type { AppointmentService } from '../../services/appointmentService.ts';
 import { OpenRouterService } from '../../services/openRouterService.ts';
 import type { GraphState } from '../graph.ts';
-
-// deterministic yes/no check; unmatched messages fall back to the LLM's semantic judgment
-const CONFIRM_YES_PATTERN = /^(sim|s|yes|y|ok(ay)?|confirmo|confirmar|isso mesmo|isso a[íi]|isso|pode confirmar|beleza|claro|com certeza|manda ver|pode ser)\b/i;
-const CONFIRM_NO_PATTERN = /^(n[ãa]o|n|no|nunca|negativo|deixa (pra|para) l[áa]|esquece|cancela isso)\b/i;
-
-function detectExplicitConfirmation(message: string): boolean | undefined {
-  const normalized = message.trim().toLowerCase();
-  if (CONFIRM_YES_PATTERN.test(normalized)) return true;
-  if (CONFIRM_NO_PATTERN.test(normalized)) return false;
-  return undefined;
-}
+import { detectExplicitConfirmation } from './confirmationPatterns.ts';
 
 export function createIdentifyIntentNode(llmClient: OpenRouterService, appointmentService: AppointmentService) {
   return async (state: GraphState): Promise<Partial<GraphState>> => {
@@ -47,6 +37,7 @@ export function createIdentifyIntentNode(llmClient: OpenRouterService, appointme
         appointments: appointmentsList,
         pendingConfirmation,
       })
+      
       const userPrompt = getUserPromptTemplate(history)
       const result = await llmClient.generateStructured(
         systemPrompt,

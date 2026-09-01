@@ -9,6 +9,13 @@ const ScheduleRequiredFieldsSchema = z.object({
   userId: z.number({ required_error: 'Authenticated user is required' }),
 });
 
+// the LLM extracts the wall-clock hour literally with a "Z" suffix (no timezone math);
+// this app's clock is always America/Sao_Paulo, so we apply the real UTC-3 offset here
+function parseAppointmentDatetime(llmDatetime: string): Date {
+  const wallClock = llmDatetime.endsWith('Z') ? llmDatetime.slice(0, -1) : llmDatetime;
+  return new Date(`${wallClock}-03:00`);
+}
+
 export function createSchedulerNode(appointmentService: AppointmentService) {
   return async (state: GraphState): Promise<Partial<GraphState>> => {
 
@@ -24,7 +31,7 @@ export function createSchedulerNode(appointmentService: AppointmentService) {
 
         const appointment = await appointmentService.bookAppointment(
           validation.data.professionalId,
-          new Date(validation.data.datetime),
+          parseAppointmentDatetime(validation.data.datetime),
           validation.data.patientName,
           state.reason ?? 'general consultation',
           validation.data.userId

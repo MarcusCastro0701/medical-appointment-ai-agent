@@ -79,6 +79,9 @@ npm start
 
 ## Verifying it works
 
+> [!IMPORTANT]
+> Scheduling, cancelling, listing appointments and chat history are all behind authentication — none of it works without a valid token. **Create a user first** (via the frontend consuming this API, or with the signup call below) to get one.
+
 ```bash
 curl -X POST http://localhost:3000/auth/signup \
   -H 'Content-Type: application/json' \

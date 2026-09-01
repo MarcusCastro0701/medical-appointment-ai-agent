@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 export const IntentSchema = z.object({
   intent: z.enum(['schedule', 'cancel', 'list_appointments', 'unknown']).describe('The user intent'),
@@ -73,7 +73,7 @@ export const getSystemPrompt = (
     extraction_instructions: {
       professionalId: 'Match the professional name mentioned in the question to the ID from the professionals list. Use fuzzy matching. If none was mentioned or resolvable from context, leave this field empty — do not guess.',
       professionalName: 'Extract the professional name as mentioned by the user',
-      datetime: 'Parse relative dates (today, tomorrow) and times. Convert to ISO format. Use current_date as reference.',
+      datetime: 'Parse relative dates (today, tomorrow) and times using current_date as reference. CRITICAL: never apply timezone conversion. Take the time exactly as stated (e.g. "9am" / "9h" → 09:00, "4pm" / "16h" → 16:00) and format it as ISO-8601 with a "Z" suffix, using those digits as-is — this rule is the same regardless of whether the conversation is in English or Portuguese.',
       patientName: 'Extract the patient name from the question or context. If not stated and the user is clearly acting for themselves, copy the actual string from authenticated_user.name into this field — never output the literal text "authenticated_user.name" or any placeholder.',
       reason: 'Extract the reason/purpose for the appointment (only for scheduling)',
       appointmentId: 'Only for cancel intent — copy the actual id string of the matching entry from user_appointments. Never output a placeholder, description, or the literal text "user_appointments" — it must be the real id value or left empty.'
@@ -82,6 +82,11 @@ export const getSystemPrompt = (
       {
         input: 'I want to schedule with Dr. Alicio da Silva for tomorrow at 4pm for a check-up',
         output: { intent: 'schedule', professionalId: 1, professionalName: 'Dr. Alicio da Silva', datetime: '2026-02-12T16:00:00.000Z', reason: 'check-up' }
+      },
+      {
+        input: 'Book an appointment with Dr. Alicio da Silva tomorrow at 9am',
+        note: 'Time stated as "9am" — take the digits literally (09:00) with no timezone shift. This is the same rule as the Portuguese examples ("16h" → 16:00); the conversation being in English changes nothing about how the hour is extracted.',
+        output: { intent: 'schedule', professionalId: 1, professionalName: 'Dr. Alicio da Silva', datetime: '2026-02-12T09:00:00.000Z' }
       },
       {
         input: 'Marca uma consulta pra mim com a Dra. Ana Pereira amanhã às 10h',
@@ -156,7 +161,7 @@ export const getUserPromptTemplate = (history: { role: string; content: unknown 
       'Use the earlier messages only as context, e.g. to resolve references like "my appointment" or answer follow-ups about something already discussed',
       'Carefully analyze the current message to determine the user intent',
       'Extract all relevant appointment details, using earlier context if the current message alone is incomplete',
-      'Convert dates and times to ISO format',
+      'Convert dates and times to ISO format, using the stated hour literally with no timezone conversion',
       'Match professional names to their IDs',
       'Return only the fields that are present or reasonably inferable from the conversation'
     ]

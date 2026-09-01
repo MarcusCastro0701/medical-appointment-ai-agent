@@ -2,6 +2,7 @@ import { getSystemPrompt, getUserPromptTemplate, MessageSchema } from '../../pro
 import { OpenRouterService } from '../../services/openRouterService.ts';
 import type { GraphState } from '../graph.ts';
 import { AIMessage } from 'langchain';
+import { preferredLanguage } from '../../config/index.ts';
 
 const UNAVAILABLE_MESSAGE = 'Estamos com instabilidade técnica no momento e não conseguimos processar sua mensagem. Por favor, tente novamente em alguns instantes.';
 
@@ -41,7 +42,7 @@ export function createMessageGeneratorNode(llmClient: OpenRouterService) {
             const history = state.messages.map((m) => ({ role: m.getType(), content: m.content }));
 
             const systemPrompt = getSystemPrompt()
-            const userPrompt = getUserPromptTemplate({ scenario, details, history })
+            const userPrompt = getUserPromptTemplate({ scenario, details, history, preferredLanguage })
 
             const result = await llmClient.generateStructured(
                 systemPrompt,

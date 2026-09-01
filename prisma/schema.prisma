@@ -41,7 +41,7 @@ model Appointment {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([professionalId, datetime])
-  @@index([userId])
+  @@unique([userId, datetime])
 }
 
 model Chat {

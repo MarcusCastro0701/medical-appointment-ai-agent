@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 export const MessageSchema = z.object({
   message: z.string().min(10).describe('Clear, friendly message for the user')
@@ -46,7 +46,7 @@ export const getUserPromptTemplate = (data: any) => {
       'Be clear and direct',
       'Show empathy, especially for errors',
       'For unknown intents with no relevant history, guide users back to scheduling/cancelling',
-      'Answer in the same language as the question (preferably Portuguese)'
+      `Answer in the same language as the question (preferably ${data.preferredLanguage})`
     ],
     examples: {
       schedule_confirm_needed: 'Posso agendar sua consulta com o Dr. Alicio da Silva (Cardiologia) para 12 de fevereiro de 2026 às 16h, em nome de Maria Santos. Confirma?',

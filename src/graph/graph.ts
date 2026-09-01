@@ -87,7 +87,7 @@ export function buildAppointmentGraph(classifierLlm: OpenRouterService, narrator
         }
 
         if (state.awaitingConfirmation && state.confirmed) {
-          console.log(`➡️  Confirmed — executing pending ${state.awaitingConfirmation}`);
+          console.log(`➡️  Confirmed, executing pending ${state.awaitingConfirmation}`);
           return state.awaitingConfirmation;
         }
 
