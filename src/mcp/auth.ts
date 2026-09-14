@@ -1,9 +1,6 @@
 import authRepository from '../repositories/auth-repository.ts';
 
-// Mesma verificação que o middleware Fastify (authentication-middleware.ts) faz,
-// só que como função pura reaproveitável pelas tools MCP — sem depender de
-// FastifyRequest/FastifyReply, já que aqui o token chega como parâmetro da tool,
-// não como header HTTP.
+// same check as fastify middleware just no http here
 export async function requireUser(authToken: string) {
     const session = await authRepository.findActiveSessionByToken(authToken);
 

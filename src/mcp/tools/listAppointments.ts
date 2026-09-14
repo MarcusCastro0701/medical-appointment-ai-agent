@@ -16,8 +16,7 @@ const AppointmentSchema = z.object({
     createdAt: z.string(),
 });
 
-// Mesma forma de resposta do GET /appointments (server.ts) — nenhuma tool MCP
-// inventa um formato novo de dado que já existe e é usado em outro lugar.
+
 export function registerListAppointmentsTool(server: McpServer, appointmentService: AppointmentService) {
     server.registerTool(
         'list_appointments',
