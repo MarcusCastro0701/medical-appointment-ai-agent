@@ -10,7 +10,7 @@ let client: Client;
 let authToken: string;
 let professionals: { id: number; name: string; specialty: string }[];
 
-const TEST_PATIENT_NAMES = ['Mcp Patient One', 'Mcp Patient Two', 'Mcp Patient Three', 'Mcp Patient Four'];
+const TEST_PATIENT_NAMES = ['Mcp Patient One', 'Mcp Patient Two', 'Mcp Patient Three', 'Mcp Patient Four', 'Mcp Patient Five'];
 
 async function signupUser() {
     const { token } = await signup({
@@ -142,6 +142,17 @@ describe('Medical Appointment MCP Server - E2E Tests', async () => {
 
         const created = await prisma.appointment.count({ where: { patientName: 'Mcp Patient Four' } });
         assert.equal(created, 0);
+    });
+
+    it('schedule_appointment defaults reason to general consultation when omitted', async () => {
+        const result = await callTool('schedule_appointment', {
+            authToken,
+            professionalId: professionals[1].id,
+            datetime: '2026-12-13T08:00:00-03:00',
+            patientName: 'Mcp Patient Five',
+        });
+        const created = result.structuredContent as { reason: string };
+        assert.equal(created.reason, 'general consultation');
     });
 
     it('professionals resource lists the real seeded professionals', async () => {

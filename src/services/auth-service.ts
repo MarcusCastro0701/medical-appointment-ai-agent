@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'node:crypto';
 import authRepository from '../repositories/auth-repository.ts';
 import { errors } from '../utils/httpErrors.ts';
 import type { SignupDTO, SigninDTO } from '../schemas/auth-schema.ts';
@@ -28,7 +29,7 @@ export async function signup(dto: SignupDTO) {
     passwordHash,
   });
 
-  const token = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '7d' });
+  const token = jwt.sign({ userId: user.id, jti: randomUUID() }, jwtSecret, { expiresIn: '7d' });
   await authRepository.insertSession({ userId: user.id, token });
 
   return { token };
@@ -48,7 +49,7 @@ export async function signin(dto: SigninDTO) {
     throw errors.unauthorized('Invalid credentials');
   }
 
-  const token = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: '7d' });
+  const token = jwt.sign({ userId: user.id, jti: randomUUID() }, jwtSecret, { expiresIn: '7d' });
   await authRepository.insertSession({ userId: user.id, token });
 
   return { token };
